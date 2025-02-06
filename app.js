@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
  
 app.use("/test",(req,res) =>{
-    res.send("Hello from the lala!");
+    res.send("Hello from the lalaji!");
 })
 
 app.listen(3000, ()=>{
