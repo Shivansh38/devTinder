@@ -1,9 +1,9 @@
 const express = require('express');
-
+const auth = require("./Middlewares/auth");
 const app = express();
  
-app.use("/test",(req,res) =>{
-    res.send("Hello from the lalaji!");
+app.get("/admin/user", auth, (req,res) =>{
+    res.send("all details fetched");
 })
 
 app.listen(3000, ()=>{
