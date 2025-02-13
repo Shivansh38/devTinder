@@ -6,9 +6,11 @@ const app = express();
 
 app.use(express.json());
 
-app.post("/signup", async (res, req) => {  
-    const userName = req.body.name;
+app.post("/signup", async (req, res) => {  
+    const userName = req.body;
+    
     try {
+        const user = new User(userName);
         await user.save(); 
         res.send("🎉 Data added successfully!");
     } catch (error) {
@@ -30,6 +32,18 @@ app.get("/feed", async (req, res) => {
 });
 
 
+app.delete("/user", async (req,res) =>{
+    const userId = req.body.userId;
+    try{
+        const user = await User.findByIdAndDelete(userId);
+        res.send("user deleted sucessfully");
+    }
+    catch (err) {
+        res.status(400).json({ message: "❌ Something went wrong", error: err });
+    }
+
+
+})
 connectDB()
     .then(() => {
         console.log("✅ Database successfully connected");
