@@ -18,8 +18,6 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-
-
 app.get("/feed", async (req, res) => {
     
     const userName = req.body.firstName  
@@ -36,7 +34,7 @@ app.delete("/user", async (req,res) =>{
     const userId = req.body.userId;
     try{
         const user = await User.findByIdAndDelete(userId);
-        res.send("user deleted sucessfully");
+        res.send("User deleted sucessfully");
     }
     catch (err) {
         res.status(400).json({ message: "❌ Something went wrong", error: err });
