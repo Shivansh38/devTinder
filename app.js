@@ -4,19 +4,28 @@ const User = require("./models/user");
 
 const app = express();
 
+app.use(express.json());
 
-app.post("/signup", async (req, res) => {  
+app.post("/signup", async (res, req) => {  
+    const userName = req.body.name;
     try {
-        const user = new User({ 
-            firstName: "Hala",
-            lastName: "dev",
-            age: 32
-        });
-
         await user.save(); 
         res.send("🎉 Data added successfully!");
     } catch (error) {
         res.status(500).json({ message: "❌ Error saving data", error });
+    }
+});
+
+
+
+app.get("/feed", async (req, res) => {
+    
+    const userName = req.body.firstName  
+    try {
+        const user = await User.find({ firstName: userName });
+        res.json(user);
+    } catch (err) {
+        res.status(400).json({ message: "❌ Something went wrong", error: err });
     }
 });
 
