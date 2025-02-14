@@ -1,47 +1,92 @@
 const express = require('express');
 const connectDB = require("./config/database"); 
 const User = require("./models/user");
+const { validateSignupData } = require("./utils/validation");
+const bcrypt = require('bcrypt');
 
 const app = express();
-
 app.use(express.json());
 
+// Signup Route
 app.post("/signup", async (req, res) => {  
-    const userName = req.body;
-    
     try {
-        const user = new User(userName);
+        validateSignupData(req);  // Validate request body  
+        // extract the password
+        const {firstName, lastName, emailId, password,age,gender} = req.body;
+
+        // create encrypted password
+        const passwordHash = await bcrypt.hash(password,10)
+        
+        const user = new User({
+            firstName,lastName,emailId,password:passwordHash,gender,age
+        });
         await user.save(); 
-        res.send("🎉 Data added successfully!");
-    } catch (error) {
-        res.status(500).json({ message: "❌ Error saving data", error });
-    }
-});
-
-app.get("/feed", async (req, res) => {
-    
-    const userName = req.body.firstName  
-    try {
-        const user = await User.find({ firstName: userName });
-        res.json(user);
+        
+        res.status(201).json({ message: "🎉 User added successfully!" });
     } catch (err) {
-        res.status(400).json({ message: "❌ Something went wrong", error: err });
+        res.status(500).json({ message: `❌ Error saving data: ${err.message}` });
+    }
+});
+
+// Feed Route (GET user by firstName)
+app.get("/feed", async (req, res) => {
+    const userName = req.query.firstName; // Use query parameters instead of req.body
+
+    if (!userName) {
+        return res.status(400).json({ message: "❌ firstName query parameter is required" });
+    }
+
+    try {
+        const users = await User.find({ firstName: userName });
+        res.json(users);
+    } catch (err) {
+        res.status(400).json({ message: "❌ Something went wrong", error: err.message });
+    }
+});
+
+// Delete User Route
+app.delete("/user/:userId", async (req, res) => { // Use URL params instead of req.body
+    const userId = req.params.userId;
+
+    try {
+        const user = await User.findByIdAndDelete(userId);
+        if (!user) {
+            return res.status(404).json({ message: "❌ User not found" });
+        }
+        res.json({ message: "✅ User deleted successfully", user });
+    } catch (err) {
+        res.status(400).json({ message: "❌ Something went wrong", error: err.message });
+    }
+});
+
+//login api
+app.post("/login", async (req, res) => {
+    try {
+        const { emailId, password } = req.body;
+        console.log(emailId);
+        console.log(password);
+
+        const user = await User.findOne({ emailId });
+        if (!user) {
+            throw new Error("User not registered");
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (isPasswordValid) {
+            return res.status(200).json({ message: "✅ Login Successful Yayy!!" }); // ✅ Return after sending response
+        } else {
+            throw new Error("❌ Invalid password, please try again.");
+        }
+    } catch (err) {
+        res.status(400).json({ message: "❌ Something went wrong", error: err.message });
     }
 });
 
 
-app.delete("/user", async (req,res) =>{
-    const userId = req.body.userId;
-    try{
-        const user = await User.findByIdAndDelete(userId);
-        res.send("User deleted sucessfully");
-    }
-    catch (err) {
-        res.status(400).json({ message: "❌ Something went wrong", error: err });
-    }
 
 
-})
+// Connect to Database and Start Server
 connectDB()
     .then(() => {
         console.log("✅ Database successfully connected");
