@@ -3,9 +3,11 @@ const connectDB = require("./config/database");
 const User = require("./models/user");
 const { validateSignupData } = require("./utils/validation");
 const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser')
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 
 // Signup Route
 app.post("/signup", async (req, res) => {  
@@ -74,6 +76,7 @@ app.post("/login", async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (isPasswordValid) {
+            res.cookie("token","abcdefghijklmnopqrstuvwxyz");
             return res.status(200).json({ message: "✅ Login Successful Yayy!!" }); // ✅ Return after sending response
         } else {
             throw new Error("❌ Invalid password, please try again.");
@@ -83,6 +86,12 @@ app.post("/login", async (req, res) => {
     }
 });
 
+
+app.get("/profile", async(req,res) =>{
+    const cookies = req.cookies;
+    console.log(cookies);
+    return res.send("testing cookies");
+})
 
 
 
