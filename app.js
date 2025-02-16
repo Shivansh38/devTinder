@@ -38,21 +38,14 @@ app.post("/signup", async (req, res) => {
 app.post("/login", async (req, res) => {
     try {
         const { emailId, password } = req.body;
-        console.log(emailId);
-        console.log(password);
-
         const user = await User.findOne({ emailId });
         if (!user) {
             throw new Error("User not registered");
         }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await user.validatePassword(password);
 
         if (isPasswordValid) {
-            // create jwt token
-            const token = await jwt.sign({_id : user._id }, "Devtinder@123", {
-                expiresIn: "1d"
-            });
+            const token = await user.getJWT();
             console.log(token);
             res.cookie("token", token);
             return res.status(200).json({ message: "✅ Login Successful Yayy!!" }); // ✅ Return after sending response
