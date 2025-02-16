@@ -4,10 +4,13 @@ const User = require("./models/user");
 const { validateSignupData } = require("./utils/validation");
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser')
-
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+
+const jwt = require('jsonwebtoken');
+
+const userAuth = require('./Middlewares/auth');
 
 // Signup Route
 app.post("/signup", async (req, res) => {  
@@ -30,36 +33,6 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-// Feed Route (GET user by firstName)
-app.get("/feed", async (req, res) => {
-    const userName = req.query.firstName; // Use query parameters instead of req.body
-
-    if (!userName) {
-        return res.status(400).json({ message: "❌ firstName query parameter is required" });
-    }
-
-    try {
-        const users = await User.find({ firstName: userName });
-        res.json(users);
-    } catch (err) {
-        res.status(400).json({ message: "❌ Something went wrong", error: err.message });
-    }
-});
-
-// Delete User Route
-app.delete("/user/:userId", async (req, res) => { // Use URL params instead of req.body
-    const userId = req.params.userId;
-
-    try {
-        const user = await User.findByIdAndDelete(userId);
-        if (!user) {
-            return res.status(404).json({ message: "❌ User not found" });
-        }
-        res.json({ message: "✅ User deleted successfully", user });
-    } catch (err) {
-        res.status(400).json({ message: "❌ Something went wrong", error: err.message });
-    }
-});
 
 //login api
 app.post("/login", async (req, res) => {
@@ -76,7 +49,12 @@ app.post("/login", async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (isPasswordValid) {
-            res.cookie("token","abcdefghijklmnopqrstuvwxyz");
+            // create jwt token
+            const token = await jwt.sign({_id : user._id }, "Devtinder@123", {
+                expiresIn: "1d"
+            });
+            console.log(token);
+            res.cookie("token", token);
             return res.status(200).json({ message: "✅ Login Successful Yayy!!" }); // ✅ Return after sending response
         } else {
             throw new Error("❌ Invalid password, please try again.");
@@ -87,14 +65,21 @@ app.post("/login", async (req, res) => {
 });
 
 
-app.get("/profile", async(req,res) =>{
-    const cookies = req.cookies;
-    console.log(cookies);
-    return res.send("testing cookies");
+app.get("/profile", userAuth, async(req,res) =>{
+    try{
+    const user = req.user;
+    return res.send(user);
+    }
+    catch (err) {
+        res.status(400).json({ message: "❌ Something went wrong", error: err.message });
+    }
 })
 
+app.post("/sendConnectionRequest", userAuth, async(req,res) =>{
+    const user = req.user;
 
-
+    res.send(user.firstName + "send this request");
+})
 // Connect to Database and Start Server
 connectDB()
     .then(() => {
